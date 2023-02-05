@@ -1,16 +1,20 @@
 <?php
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+//use PHPOpenSourceSaver\JWTAuth;
+use JWTAuth;
+//use Laravel\Sanctum\HasApiTokens;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
-{
-
+{    
+    //use HasApiTokens;
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login','register']]);
+        $this->middleware('auth:api', ['except' => ['login','register','logout']]);
     }
 
     public function login(Request $request)
@@ -21,7 +25,7 @@ class AuthController extends Controller
         ]);
         $credentials = $request->only('email', 'password');
 
-        $token = Auth::attempt($credentials);
+        $token = JWTAuth::attempt($credentials);
         if (!$token) {
             return response()->json([
                 'status' => 'error',
@@ -29,7 +33,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user = Auth::user();
+        $user = JWTAuth::user();
         return response()->json([
                 'status' => 'success',
                 'user' => $user,
@@ -53,8 +57,9 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        $token = Auth::login($user);
+        $credentials = $request->only('email', 'password');
+        $token = JWTAuth::attempt($credentials);
+      //  $token = JWTAuth::login($user);
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully',
@@ -68,7 +73,7 @@ class AuthController extends Controller
 
     public function logout()
     {
-        Auth::logout();
+        JWTAuth::logout();
         return response()->json([
             'status' => 'success',
             'message' => 'Successfully logged out',
@@ -79,9 +84,9 @@ class AuthController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'user' => Auth::user(),
+            'user' => JWTAuth::user(),
             'authorisation' => [
-                'token' => Auth::refresh(),
+                'token' => JWTAuth::refresh(),
                 'type' => 'bearer',
             ]
         ]);
